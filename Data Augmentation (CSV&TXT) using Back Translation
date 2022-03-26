@@ -1,0 +1,232 @@
+# Instlling nlpaug (you need internet!)
+!pip install nlpaug
+
+
+import os
+import pandas as pd, numpy as np
+import matplotlib.pyplot as plt
+from transformers import *
+
+import random
+import nlpaug.augmenter.word as naw
+
+
+# We save the created data in the following folder
+os.mkdir("data_augmented")
+
+train = pd.read_csv('../input/feedback-prize-2021/train.csv')
+train.head()
+
+
+
+# Augmentation methods Study
+# For test purpose, we shall take a random discourse, and apply some of the available augmentation methods, to see how the text is transformed.
+
+IDS = train["id"].unique()
+
+# We shall pick one random text to see how the augmentation performs
+random.seed(1)
+id_text = random.choice(IDS)
+os_test_pdf = train[train["id"] == id_text]
+
+# The associated text file
+file_path = f'../input/feedback-prize-2021/train/{id_text}.txt'
+study_text = open(file_path, 'r').read()
+
+
+
+# Augmentation using Nlpaug
+# Synonym Augmentation
+# The method simply consists to replace some of the words in the original text by their synonym. You can change the minimum of maximum number of replacement by specifying the parameters, as explained here. As you can see here and below, using nlpaug, data augmentation is done in two lines!
+
+# We take a text chunk from the train dataframe to apply augmentation
+text_chunk = os_test_pdf.iloc[10]["discourse_text"]
+
+syn_aug = naw.SynonymAug(aug_src='wordnet')
+text_chunk_aug_syn = syn_aug.augment(text_chunk)
+
+
+# Word2Vec Augmentation
+# Word2Vec augmentation is similar to synonym augmentation, but it replace words not by its synonym, but rather by word having similar vectorial represenation. In order to use this augmentation, we need to specify the backbone. There are many available on Kaggle's dataset, here we shall use the most common GoogleNews trained one, which you can find here.
+# https://www.kaggle.com/datasets/umbertogriffo/googles-trained-word2vec-model-in-python
+
+transf_aug = naw.ContextualWordEmbsAug(model_path="roberta-base", action="substitute")
+text_chunk_aug_transf = transf_aug.augment(text_chunk)
+
+
+# Back Translation
+# The back translation method consists to first translate the original text into another language (for instance French, German...), and then translate it back to the original one. This has as effects to create new texts having the same meaning, yet with different words/length. Here too you need internet connection, since under the hood nlpaug uses huggingface translation models (by default English -> German -> English).
+
+# It is also worth noticing that one can set the device parameter so as to use GPUs.
+
+# 4) Back translation augmentation
+# back_trans_aug = naw.BackTranslationAug(device="cuda")  # If using GPUs
+back_trans_aug = naw.BackTranslationAug()
+text_chunk_aug_btrans = back_trans_aug.augment(text_chunk)
+
+# Comparing the different augmentation method
+print("Original:")
+print(text_chunk)
+print("")
+print("Synonym Augmented Text:")
+print(text_chunk_aug_syn)
+print("")
+print("Word2Vec Augmented Text:")
+print(text_chunk_aug_w2v)
+print("")
+print("Roberta Augmented Text:")
+print(text_chunk_aug_transf)
+print("")
+print("Back Translation Augmented Text:")
+print(text_chunk_aug_btrans)
+
+
+# Creating Augmented dataset
+# The previous study showed that while there are many way avilable in augmenting text data, either transformers based approach or back-translation approach give the most prominent results. One shall therefore stick with the back-translation method in what follows. Let us briefly note that one can also use the transfomers method if we want to get extra dataset.
+
+# We shall now create a new dataset, in three steps:
+
+# First, back translate all the discourses corresponding to a given text in the original training csv file
+# Next, create a new text file by picking up the original text, and replacing the discourses inside by the new ones created in 1.
+# Finally, create a new csv file, taking into account the new discourse positions, and prediction strings.
+
+# For testing purpose, we shall select only 5 texts
+n_augment = 5
+selected_id = np.random.choice(IDS, size=n_augment, replace=False)
+
+train_selected = train[train["id"].isin(selected_id)]
+
+# Selecting the back translation augmentation method
+augmenter = back_trans_aug
+
+# Set the following to avoid warning message
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# Applying augmentation to all the selected texts
+# Since this may take a while, we shall show progressbar using tqdm
+from tqdm.auto import tqdm
+tqdm.pandas()
+
+# train_selected["augmented_text"] = train_selected.apply(lambda row : augmenter.augment(row["discourse_text"]), axis=1)  # If you don't want to use tqdm
+train_selected["augmented_text"] = train_selected.progress_apply(lambda row : augmenter.augment(row["discourse_text"]), axis=1)
+
+train_selected.head()
+
+# Creating new csv and txt files
+# The function takes the id of the text we want to update, and the previously created dataframe (containg the augmented dataset) to create the new text file. The function returns the new text file as well as a dataframe containg the new discourse_start, discourse_end and prediction_string.
+
+# The prediction string calculation is based on the discussion here, as well as the official annoucement here.
+
+# Function to replace original text by new text and save it
+
+def augment_text_file(text_id, train_pdf):
+    # Get original text
+    file_path = f'../input/feedback-prize-2021/train/{text_id}.txt'
+    with open(file_path, 'r') as fr:
+        original_text = fr.read()
+    
+    # Get corresponding training data
+    text_pdf = train_pdf[train_pdf["id"] == text_id]
+        
+    # Init variables
+    char_pos_original = 0  # trace the character position in the original text
+    new_text = ""
+    discourse_start_list = []
+    discourse_end_list = []
+    prediction_string_list = []
+        
+    # Loop on the training data discourses
+    for row in text_pdf[["discourse_start", "discourse_end"]].itertuples():
+        discourse_start, discourse_end = int(row[1]), int(row[2])
+                
+        # Copy the non-discourse text from the orginal
+        if char_pos_original < discourse_start:
+            new_text += original_text[char_pos_original:discourse_start] 
+        
+        # Evaluate the new discourse starting position/string
+        discourse_start_new = len(new_text)
+        discourse_start_list.append(discourse_start_new)
+        word_start = len(new_text.split())
+
+        # Copy the augmented discourse text
+        new_text += text_pdf[text_pdf["discourse_start"] == discourse_start]["augmented_text"].iloc[0]
+    
+        # Evaluate the new discourse end position/string
+        discourse_end_list.append(len(new_text))
+        word_end = word_start + len(new_text[discourse_start_new:].split())     
+        prediction_string_list.append(" ".join([str(x) for x in range(word_start, word_end)]))
+        
+        char_pos_original = discourse_end
+
+    text_pdf["discourse_start_augmented"] = discourse_start_list
+    text_pdf["discourse_end_augmented"] = discourse_end_list
+    text_pdf["predictionstring_augmented"] = prediction_string_list
+    
+    # Copy the remaining of the original text
+    if char_pos_original < len(original_text) - 1:
+        new_text += original_text[char_pos_original:len(original_text)]
+    
+    # Join the strings and save
+    save_path = f"./data_augmented/{text_id}_aug.txt"
+    with open(save_path, "w") as fw:
+        fw.write(new_text)
+    
+    return new_text, text_pdf
+    
+    
+    
+# Applying the function to our training dataset (containing the augmented text)
+dag_info_list = []
+for text_id in tqdm(train_selected["id"].unique()):
+    new_text, text_pdf = augment_text_file(text_id, train_selected)
+    dag_info_list.append(text_pdf)
+dag_info = pd.concat(dag_info_list)
+
+
+# Data Checking
+# The new dataframe now contains:
+
+# discourse_start_augmented
+# discourse_end_augmented
+# augmented_text (don't know why I didn't call it text_augmented...)
+# predictionstring_augmented
+# Let us see how do they look like.
+
+
+# Specify here the index of the dataframe one wants to check
+check_idx = 0
+
+# Loading texts
+check_id = dag_info.iloc[check_idx]["id"]
+with open(f'../input/feedback-prize-2021/train/{check_id}.txt', "r") as f:
+    original_text = f.read()
+with open(f"./data_augmented/{check_id}_aug.txt") as f:
+    new_text = f.read()
+
+# Checking the original discourse
+print("Original")
+print(f"----- Discourse text in the dataframe: \n {dag_info.iloc[check_idx]['discourse_text']}")
+print(f"----- Discourse text in the text file: \n {original_text[int(dag_info.iloc[check_idx]['discourse_start']):int(dag_info.iloc[check_idx]['discourse_end'])]}")
+
+# Checking the new discourse
+print("\n New")
+print(f"----- Discourse text in the dataframe: \n {dag_info.iloc[check_idx]['augmented_text']}")
+print(f"----- Discourse text in the text file: \n {new_text[int(dag_info.iloc[check_idx]['discourse_start_augmented']):int(dag_info.iloc[check_idx]['discourse_end_augmented'])]}")
+
+
+
+
+# Save¶
+# You can finally save the dataframe into csv file, (almost) ready to use for your model! If you want to use it in your model, together with the original data, you should be careful in dropping/renaming some of the columns and modify the id as well as discourse_id to avoid duplicates.
+
+# As for the text files, they are saved in the directory you have specified at the beginning of the notebook ;)
+
+dag_info.to_csv("train_augmented.csv", index=False)
+
+
+
+
+
+
+
+
