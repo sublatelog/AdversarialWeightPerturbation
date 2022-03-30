@@ -1,0 +1,14 @@
+pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
+
+optimizer = torch.optim.SGD(net.parameters(), lr=0.1, momentum=0.9, nesterov=False)
+
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+
+import warmup_scheduler
+scheduler_w = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=5, after_scheduler=scheduler)
+
+
+
+
+
+optimizer = torch.optim.SGD(net.parameters(), lr=1e-1, momentum=0.9,nesterov=False)
