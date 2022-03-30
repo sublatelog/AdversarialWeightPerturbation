@@ -1,0 +1,20 @@
+# https://axross-recipe.com/recipes/116#exams
+
+
+
+test_transform = transforms.Compose([
+                                     transforms.FiveCrop(32),
+                                     transforms.Lambda(lambda crops: torch.stack(
+                                         [transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])(
+                                             transforms.ToTensor()(crop)
+                                             )for crop in crops
+                                         ])
+                                     )
+])
+
+
+
+
+
+test_ds = torchvision.datasets.CIFAR10('.', train=False, transform=test_transform,download=True)
+test_dl = torch.utils.data.DataLoader(test_ds, batch_size=256, num_workers=4)
