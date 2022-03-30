@@ -157,7 +157,7 @@ class PreActResNet18(nn.Module):
 
 
 
-
+net = PreActResNet18(n_c=3, num_classes=classes)
 
 
 
