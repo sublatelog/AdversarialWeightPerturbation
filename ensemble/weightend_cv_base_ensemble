@@ -1,0 +1,13 @@
+# START ENSEMBLE USING MODEL WITH LARGEST CV
+# Repeat until CV does not increase by 0.0003+ :
+# TRY ADDING EVERY MODEL ONE AT A TIME AND REMEMBER 
+# HOW MUCH EACH INCREASES THE ENSEMBLE CV SCORE
+
+for k in range( len(models) ):
+    for w in [0.01, 0.02, ..., 0.98, 0.99]:
+        # TRY ADDING MODEL k WITH WEIGHT w TO ENSEMBLE
+        trial = w * model[k,] + (1-w) * ensemble
+        auc_trial = roc_auc_score(true, trial)
+        
+# ADD ONE NEW MODEL TO ENSEMBLE THAT INCREASED CV THE MOST
+# CHECK NEW CV SCORE. IF IT INCREASED REPEAT LOOP
