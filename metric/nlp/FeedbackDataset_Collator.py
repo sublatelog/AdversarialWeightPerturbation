@@ -150,6 +150,12 @@ class CustomCollator(object):
                     gt_spans=gt_spans)
 
 
-
+train_ds = FeedbackDataset(**cfg.data, tokenizer=detector.tokenizer)
+collate = CustomCollator(detector.tokenizer, detector.model)
+train_dl = DataLoader(train_ds,
+                      batch_size=1,
+                      shuffle=True,
+                      num_workers=2,
+                      collate_fn=collate)
 
 
