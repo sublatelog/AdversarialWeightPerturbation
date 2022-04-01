@@ -1,0 +1,12 @@
+def span_nms(start, end, score, nms_thr=0.5):
+    boxes = torch.stack(
+        [
+            start,
+            torch.zeros_like(start),
+            end,
+            torch.ones_like(start),
+        ],
+        dim=1,
+    ).float()
+    keep = nms(boxes, score, nms_thr)
+    return keep
