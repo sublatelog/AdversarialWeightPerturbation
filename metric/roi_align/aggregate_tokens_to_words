@@ -1,0 +1,4 @@
+def aggregate_tokens_to_words(feat, word_boxes):
+    feat = feat.permute(0, 2, 1).unsqueeze(2)
+    output = roi_align(feat, [word_boxes], 1, aligned=True)
+    return output.squeeze(-1).squeeze(-1)
