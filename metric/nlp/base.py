@@ -1,6 +1,6 @@
 arch = {
-        "allenai/longformer-base-4096"
-
+        'allenai/longformer-base-4096',
+        'google/bigbird-roberta-base',
         }
 
 
