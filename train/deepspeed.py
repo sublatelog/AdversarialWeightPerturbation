@@ -1,3 +1,6 @@
+# https://colab.research.google.com/drive/1zS2E8sHERmldNgnoS1RPriujw-4HvOdk#scrollTo=ofZ-FlLsZXeH
+
+
 # torch_cudaのバージョンを調節
 
 
