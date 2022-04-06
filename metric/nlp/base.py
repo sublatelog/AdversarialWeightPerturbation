@@ -1,3 +1,8 @@
+
+!pip3 install git+https://github.com/huggingface/transformers
+
+
+
 arch = {
         'allenai/longformer-base-4096',
         'google/bigbird-roberta-base',
