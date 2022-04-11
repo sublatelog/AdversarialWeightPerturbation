@@ -31,7 +31,7 @@ print(os.environ.get('CUDA_PATH'))
 import torch; print(torch.version.cuda)
 import torch; print(torch.__version__)
 !python --version
-
+cv2.__version__
 
 
 
