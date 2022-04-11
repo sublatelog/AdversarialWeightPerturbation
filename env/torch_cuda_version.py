@@ -30,7 +30,7 @@ print(os.environ.get('CUDA_PATH'))
 !nvidia-smi
 import torch; print(torch.version.cuda)
 import torch; print(torch.__version__)
-
+!python --version
 
 
 
