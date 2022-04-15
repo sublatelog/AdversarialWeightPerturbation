@@ -19,15 +19,15 @@
 !unzip -n /content/data/*.zip -d /content/data
 !rm /content/data/*.zip
 
-# # kaggleデータセットのダウンロード
+# # kaggle notebook 出力データのダウンロード
 # !mkdir -p k/oldufo/imc2022-dependencies
 # !kaggle kernels output oldufo/imc2022-dependencies -p k/oldufo/imc2022-dependencies
 
-# # kaggleデータセットのダウンロード
-# !mkdir -p /content/imgs-matching
-# !kaggle datasets download -d ammarali32/imgs-matching -p /content/imgs-matching
-# !unzip /content/imgs-matching/imgs-matching.zip -d /content/imgs-matching
-# !rm /content/imgs-matching/*.zip
+# kaggleデータセットのダウンロード
+!mkdir -p /content/tensorort7234
+!kaggle datasets download -d httpwwwfszyc/tensorort7234 -p /content/tensorort7234
+!unzip /content/tensorort7234/tensorort7234.zip -d /content/tensorort7234
+!rm /content/tensorort7234/*.zip
 
 # githubレポジトリのダウンロード
 !git clone https://github.com/sublatelog/Coarse_LoFTR_TRT.git
