@@ -1,6 +1,6 @@
 !which python # /usr/local/bin/python
 
-!python --version
+!python --version # Python 3.7.13
 
 !echo $PYTHONPATH # /env/python
 
