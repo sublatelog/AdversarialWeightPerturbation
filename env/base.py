@@ -10,7 +10,7 @@
 !nvidia-smi
 
 
-# pythonのバージョンでぇんこう
+# pythonのバージョン変更
 # Choose one of the given alternatives:
 !sudo update-alternatives --config python3
 
