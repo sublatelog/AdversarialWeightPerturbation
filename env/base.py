@@ -14,6 +14,16 @@
 # Choose one of the given alternatives:
 !sudo update-alternatives --config python3
 
+
+!nvcc --version
+!nvidia-smi
+import torch; print(torch.version.cuda)
+import torch; print(torch.__version__)
+!python --version
+cv2.__version__
+
+
+
 # This one used to work but now NOT(for me)!
 # !sudo update-alternatives --config python
 
